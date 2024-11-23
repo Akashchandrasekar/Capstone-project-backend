@@ -13,11 +13,16 @@ const app = express();
 app.use(express.json());
 app.use(cors());
 
+app.get("/", (req, res) => {
+  res.status(200).send("Welcome to Our API");
+});
+
 // Routes
 app.use('/api/auth', authRoutes);
 app.use('/api/vehicles', vehicleRoutes);
 app.use('/api/bookings', bookingRoutes);
 app.use('/api/reviews', reviewRoutes);
+
 
 // Database connection
 mongoose
