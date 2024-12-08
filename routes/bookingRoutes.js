@@ -5,7 +5,7 @@ import {
   getBookingById,
   cancelBooking,
 } from "../controllers/bookingController.js";
-import { authMiddleware } from "../middleware/authMiddleware.js"; // Ensure correct path and naming consistency
+import { authMiddleware, adminMiddleware } from "../middleware/authMiddleware.js"; // Ensure correct path and naming consistency
 
 const router = express.Router();
 
@@ -19,7 +19,7 @@ router.get("/", authMiddleware, getBookings);
 // Get details of a specific booking by ID
 router.get("/:id", authMiddleware, getBookingById);
 
-// Cancel a booking by ID
-router.delete("/:id", authMiddleware, cancelBooking);
+// Cancel a booking by ID (Admins Only)
+router.delete("/:id", authMiddleware, adminMiddleware, cancelBooking);
 
 export default router;

@@ -1,6 +1,5 @@
 import User from "../models/User.js";
-import bcrypt from 'bcryptjs';
-
+import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import dotenv from "dotenv";
 import nodemailer from "nodemailer";
@@ -21,7 +20,7 @@ export const registerUser = async (req, res) => {
     const hashPassword = await bcrypt.hash(password, 10);
     const newUser = new User({ name, email, password: hashPassword });
     await newUser.save();
-    res.status(200).json({ message: "User Registered Successfully", data: newUser });
+    res.status(201).json({ message: "User Registered Successfully", data: newUser });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
@@ -42,7 +41,12 @@ export const loginUser = async (req, res) => {
       return res.status(400).json({ message: "Invalid Password" });
     }
 
-    const token = jwt.sign({ _id: user._id }, process.env.JWT_SECRET, { expiresIn: "1h" });
+    const token = jwt.sign({ _id: user._id, role: user.role }, process.env.JWT_SECRET, { expiresIn: "1h" });
+
+    // Save the token to the database
+    user.token = token;
+    await user.save();
+
     res.status(200).json({ message: "User Logged In Successfully", token });
   } catch (error) {
     res.status(500).json({ message: error.message });
@@ -78,7 +82,7 @@ export const forgotPassword = async (req, res) => {
         http://localhost:5173/reset-password/${token}`,
     };
 
-    transporter.sendMail(mailOptions, (error, info) => {
+    transporter.sendMail(mailOptions, (error) => {
       if (error) {
         console.error(error);
         return res.status(500).json({ message: "Error sending email" });
@@ -111,6 +115,37 @@ export const resetPassword = async (req, res) => {
       await user.save();
       res.status(200).json({ message: "Password Reset Successfully" });
     });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+// Logout User
+export const logoutUser = async (req, res) => {
+  try {
+    const user = await User.findById(req.user.id); // Ensure authMiddleware provides `req.user`
+    if (!user) {
+      return res.status(404).json({ message: "User Not Found" });
+    }
+
+    user.token = null; // Clear token on logout
+    await user.save();
+
+    res.status(200).json({ message: "User Logged Out Successfully" });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+// Get All Users
+export const getAllUsers = async (req, res) => {
+  try {
+    if (req.user.role !== "admin") {
+      return res.status(403).json({ message: "Access Denied: Admins Only" });
+    }
+
+    const users = await User.find({}).select("-password -token"); // Exclude sensitive data
+    res.status(200).json(users);
   } catch (error) {
     res.status(500).json({ message: error.message });
   }

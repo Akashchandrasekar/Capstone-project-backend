@@ -70,20 +70,21 @@ export const cancelBooking = async (req, res) => {
       return res.status(404).json({ message: "Booking not found" });
     }
 
+    // Only allow admins to cancel
+    if (req.user.role !== "admin") {
+      return res.status(403).json({ message: "Access Denied: Admins Only" });
+    }
+
     const vehicle = await Vehicle.findById(booking.vehicle);
     if (vehicle) {
       vehicle.available = true;
       await vehicle.save();
     }
-    if (booking.user.toString() !== req.user.id && req.user.role !== "admin") {
-      return res
-        .status(403)
-        .json({ message: "You are not authorized to cancel this booking" });
-    }
 
     await booking.remove();
-    res.status(200).json({ message: "Booking cancelled" });
+    res.status(200).json({ message: "Booking cancelled successfully" });
   } catch (error) {
     res.status(500).json({ message: "Error cancelling booking", error });
   }
 };
+
