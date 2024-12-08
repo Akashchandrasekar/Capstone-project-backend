@@ -1,29 +1,36 @@
-import mongoose from 'mongoose';
-import bcrypt from 'bcryptjs';
+import mongoose from "mongoose";
 
-const userSchema = mongoose.Schema(
-  {
-    name: { type: String, required: true },
-    email: { type: String, required: true, unique: true },
-    password: { type: String, required: true },
-    isAdmin: { type: Boolean, default: false },
+const userSchema = new mongoose.Schema({
+  name: {
+    type: String,
+    required: [true, "Name is required"], // Added custom error message
+    unique: true,
+    trim: true, // Removes extra spaces
   },
-  { timestamps: true }
-);
-
-// Encrypt password before saving
-userSchema.pre('save', async function (next) {
-  if (!this.isModified('password')) {
-    next();
-  }
-
-  const salt = await bcrypt.genSalt(10);
-  this.password = await bcrypt.hash(this.password, salt);
+  email: {
+    type: String,
+    required: [true, "Email is required"], // Added custom error message
+    unique: true,
+    trim: true, // Removes extra spaces
+    lowercase: true, // Ensures email is stored in lowercase
+    match: [/.+\@.+\..+/, "Invalid email format"], // Regex for email validation
+  },
+  password: {
+    type: String,
+    required: [true, "Password is required"],
+    minlength: [6, "Password must be at least 6 characters long"], // Enforce minimum password length
+  },
+  token: {
+    type: String,
+  },
+  role: {
+    type: String,
+    enum: ["admin", "user"], // Restricts values to "admin" or "user"
+    default: "user",
+  },
+}, {
+  timestamps: true, // Automatically adds `createdAt` and `updatedAt` fields
 });
 
-// Match password
-userSchema.methods.matchPassword = async function (enteredPassword) {
-  return await bcrypt.compare(enteredPassword, this.password);
-};
-
-export default mongoose.model('User', userSchema);
+const User = mongoose.model("User", userSchema);
+export default User;

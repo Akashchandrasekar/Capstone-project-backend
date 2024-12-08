@@ -1,10 +1,10 @@
 import express from 'express';
 import { createReview, getReviews } from '../controllers/reviewController.js';
-import protect from '../middleware/authMiddleware.js';
+import  { authMiddleware } from '../middleware/authMiddleware.js';
 
 const router = express.Router();
 
-router.post('/', protect, createReview);
+router.post('/', authMiddleware, createReview);
 router.get('/:vehicleId', getReviews);
 
 export default router;
